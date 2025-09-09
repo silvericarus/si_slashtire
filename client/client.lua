@@ -1,5 +1,20 @@
 local hover = { visible = false, lastTick = 0, pos = nil, text = nil }
 
+local function performSlashAction(ms, label)
+    return lib.progressBar({
+        duration     = ms or 1500,
+        label        = label or 'Pinchando rueda...',
+        useWhileDead = false,
+        canCancel    = true,
+        disable      = { move = true, car = true, combat = true, mouse = false },
+        anim         = {
+            dict = 'melee@knife@streamed_core',
+            clip = 'ground_attack_on_spot',
+            flag = 48
+        }
+    })
+end
+
 local function showHover(text, pos)
     if not Config.HoverTextEnabled then return end
     hover.visible = true
@@ -38,8 +53,13 @@ end)
 local function hasAllowedWeapon()
     if not Config.RequireMeleeWeapon then return true end
     local ped = PlayerPedId()
-    local _, hash = GetCurrentPedWeapon(ped, true)
-    for _, w in ipairs(Config.AllowedWeapons) do
+    local hash = GetSelectedPedWeapon(ped)
+
+    if not hash or hash == 0 or hash == `WEAPON_UNARMED` then
+        return false
+    end
+
+    for _, w in ipairs(Config.Blades) do
         if hash == w then return true end
     end
     return false
@@ -63,34 +83,22 @@ local function closestTyreIndexByBone(ped, veh)
     return bestIdx, bestBone, bestDist
 end
 
-local function doSlashAnim(duration)
-    local ped = PlayerPedId()
-    RequestAnimDict('melee@knife@streamed_core')
-    while not HasAnimDictLoaded('melee@knife@streamed_core') do
-        Wait(0)
-    end
-    TaskPlayAnim(ped, 'melee@knife@streamed_core', 'ground_attack_on_spot', 8.0, -8.0, duration, 1, 0.0, false, false,
-        false)
-    Wait(duration)
-    StopAnimTask(ped, 'melee@knife@streamed_core', 'ground_attack_on_spot', 1.0)
-end
-
 local function slashNearestTyre(veh)
     if not DoesEntityExist(veh) then return end
     local ped = PlayerPedId()
     if GetVehiclePedIsIn(ped, false) == veh then return end
 
     local tyreIndex = nil
-    local idx, dist = closestTyreIndexByBone(ped, veh)
+    local idx, _, dist = closestTyreIndexByBone(ped, veh)
 
     if idx ~= nil and dist and dist <= (Config.TargetDistance + 0.5) then
         tyreIndex = idx
     end
 
-    doSlashAnim(Config.ActionMs)
-
     if tyreIndex then
-        SetVehicleTyreBurst(veh, tyreIndex, true, Config.TyreDamage)
+        if not IsVehicleTyreBurst(veh, tyreIndex, false) then
+            SetVehicleTyreBurst(veh, tyreIndex, true, Config.TyreDamage)
+        end
         if not IsVehicleTyreBurst(veh, tyreIndex, false) then
             for i = 0, 7 do
                 SetVehicleTyreBurst(veh, i, true, Config.TyreDamage)
@@ -151,6 +159,13 @@ CreateThread(function()
             end,
             onSelect = function(data)
                 local veh = data and data.entity or 0
+
+                local ok = performSlashAction(Config.ActionMs, 'Pinchando rueda...')
+                if not ok then
+                    lib.notify({ description = 'Acción cancelada', type = 'warning' })
+                    return
+                end
+
                 if veh ~= 0 then
                     slashNearestTyre(veh)
                 end

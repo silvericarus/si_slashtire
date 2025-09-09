@@ -1,20 +1,20 @@
 Config = {}
 
-Config.Debug = true -- Enable debug prints
+Config.Debug = true              -- Enable debug prints
 
-Config.Blades =     -- List of weapons that can slash tires
+Config.RequireMeleeWeapon = true -- Require a melee weapon to slash tires
+
+Config.Blades =                  -- List of weapons that can slash tires
 {
-	"WEAPON_BLADE",
-	"WEAPON_KNIFE",
-	"WEAPON_SWITCHBLADE",
-	"WEAPON_BOTTLE",
-	"WEAPON_DAGGER",
-	"WEAPON_MACHETE",
-	"WEAPON_HATCHET",
-	"WEAPON_RAZOR",
+	`WEAPON_KNIFE`,
+	`WEAPON_SWITCHBLADE`,
+	`WEAPON_BOTTLE`,
+	`WEAPON_DAGGER`,
+	`WEAPON_MACHETE`,
+	`WEAPON_HATCHET`,
 }
 
-Config.ActionMs = 1500       -- Time it takes to slash a tire in milliseconds
+Config.ActionMs = 3000       -- Time it takes to slash a tire in milliseconds
 
 Config.SlashDistance = 2.5   -- Distance to slash tires
 
